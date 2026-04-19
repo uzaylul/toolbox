@@ -1,69 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Clock</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{
-    height:100%;overflow:hidden;background:#000;
-    font-family:'Roboto Mono',monospace;color:#fff;
-  }
-  .container{
-    display:flex;flex-direction:column;justify-content:center;
-    align-items:center;height:100vh;cursor:auto;font-weight:normal;
-  }
-
-  /* Clock – no glow */
-  .clock{
-    font-size:10vw;font-weight:700;letter-spacing:5px;
-    color:#944a32;
-    margin-bottom:20px;transition:all .3s ease;
-  }
-
-  /* Date (visible on hover) */
-  .date{
-    font-size:3vw;color:#fff;opacity:0;transition:opacity .3s;
-    text-align:center;margin-top:10px;
-  }
-  .container:hover .date{opacity:1;}
-
-  /* Color picker */
-  .color-picker{
-    position:fixed;bottom:20px;display:flex;gap:10px;
-    opacity:0;transition:opacity .3s;
-  }
-  .container:hover .color-picker{opacity:1;}
-  .color-btn{
-    width:30px;height:30px;border-radius:50%;border:2px solid #fff;
-    cursor:pointer;transition:transform .2s;
-  }
-  .color-btn:hover{transform:scale(1.2);}
-
-  /* Fullscreen button – hidden by default */
-  .fullscreen-btn{
-    position:absolute;top:20px;right:20px;
-    width:36px;height:36px;border-radius:50%;
-    background:#222;border:2px solid #fff;
-    display:flex;align-items:center;justify-content:center;
-    cursor:pointer;transition:background .3s,transform .2s,opacity .3s;
-    opacity:0; /* hidden when not hovered */
-  }
-  .container:hover .fullscreen-btn{opacity:1;} /* show on hover */
-  .fullscreen-btn:hover{background:#444;}
-  .fullscreen-btn:active{transform:scale(.9);}
-</style>
+  <meta charset="UTF-8">
+  <title>Clock</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%; overflow: hidden; background: #000;
+      font-family: 'Roboto Mono', monospace; color: #fff;
+    }
+    .container {
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; height: 100vh; cursor: auto; font-weight: normal;
+    }
+    .clock {
+      font-size: 10vw; font-weight: 700; letter-spacing: 5px;
+      color: #944a32; margin-bottom: 20px; transition: all .3s ease;
+    }
+    .date {
+      font-size: 3vw; color: #fff; opacity: 0; transition: opacity .3s;
+      text-align: center; margin-top: 10px;
+    }
+    .container:hover .date { opacity: 1; }
+    .color-picker {
+      position: fixed; bottom: 20px; display: flex; gap: 10px;
+      opacity: 0; transition: opacity .3s;
+    }
+    .container:hover .color-picker { opacity: 1; }
+    .color-btn {
+      width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
+      cursor: pointer; transition: transform .2s;
+    }
+    .color-btn:hover { transform: scale(1.2); }
+    .fullscreen-btn {
+      position: absolute; top: 20px; right: 20px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #222; border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .3s, transform .2s, opacity .3s;
+      opacity: 0;
+    }
+    .container:hover .fullscreen-btn { opacity: 1; }
+    .fullscreen-btn:hover { background: #444; }
+    .fullscreen-btn:active { transform: scale(.9); }
+    #customColor {
+      width: 36px; height: 36px; border: 2px solid #fff; border-radius: 50%;
+      cursor: pointer; background: none; padding: 2px;
+    }
+    #customColor::-webkit-color-swatch-wrapper { padding: 0; }
+    #customColor::-webkit-color-swatch { border: none; border-radius: 50%; }
+  </style>
 </head>
-
 <body>
 <div class="container">
   <div id="clock" class="clock">--:--:--</div>
   <div id="date" class="date"></div>
 
-  <!-- Fullscreen toggle -->
   <div class="fullscreen-btn" title="Toggle fullscreen">&#x26F6;</div>
 
-  <!-- Color picker -->
   <div class="color-picker">
     <div class="color-btn" style="background:#944a32;" data-color="#944a32"></div>
     <div class="color-btn" style="background:#f0f;" data-color="#f0f"></div>
@@ -71,67 +65,72 @@
     <div class="color-btn" style="background:#0f0;" data-color="#0f0"></div>
     <div class="color-btn" style="background:#f00;" data-color="#f00"></div>
     <div class="color-btn" style="background:#fff;" data-color="#fff"></div>
-
-    <!-- Blue button (Mavi) -->
     <div class="color-btn" style="background:#00aaff;" data-color="#00aaff"></div>
-
-    <!-- Custom colour picker -->
-    <input type="color" id="customColor" title="Choose any colour">
+    <input type="color" id="customColor" title="Choose any colour" value="#944a32">
   </div>
 </div>
 
 <script>
-const clockEl = document.getElementById('clock');
-const dateEl  = document.getElementById('date');
-const colorBtns = document.querySelectorAll('.color-btn');
-const customColorInput = document.getElementById('customColor');
-const fullscreenBtn = document.querySelector('.fullscreen-btn');
+  (function() {
+    const clockEl = document.getElementById('clock');
+    const dateEl = document.getElementById('date');
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const customColorInput = document.getElementById('customColor');
+    const fullscreenBtn = document.querySelector('.fullscreen-btn');
 
-let currentColor = '#944a32';
+    let currentColor = '#944a32';
 
-/* ---------- Clock logic ---------- */
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  const s = String(now.getSeconds()).padStart(2, '0');
-  clockEl.textContent = `${h}:${m}:${s}`;
+    // ---------- Saat ve tarih güncelleme (her saniye) ----------
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      clockEl.textContent = `${h}:${m}:${s}`;
 
-  const opts = { weekday: 'long', year: 'numeric',
-                 month: 'long', day: 'numeric' };
-  dateEl.textContent = now.toLocaleDateString('en-GB', opts);
+      const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      dateEl.textContent = now.toLocaleDateString('en-GB', opts);
+    }
 
-  requestAnimationFrame(updateClock);
-}
+    // Hemen bir kez göster, sonra her saniye güncelle
+    updateClock();
+    const intervalId = setInterval(updateClock, 1000);
 
-/* ---------- Colour handling ---------- */
-function changeColor(col) {
-  currentColor = col;
-  clockEl.style.color = col;
-  localStorage.setItem('clockColor', col);
-}
+    // ---------- Renk işlemleri ----------
+    function changeColor(col) {
+      currentColor = col;
+      clockEl.style.color = col;
+      customColorInput.value = col;   // input ile senkronize et
+      localStorage.setItem('clockColor', col);
+    }
 
-colorBtns.forEach(btn => {
-  btn.addEventListener('click', () => changeColor(btn.dataset.color));
-});
+    colorBtns.forEach(btn => {
+      btn.addEventListener('click', () => changeColor(btn.dataset.color));
+    });
 
-customColorInput.addEventListener('input', e => changeColor(e.target.value));
+    customColorInput.addEventListener('input', e => changeColor(e.target.value));
 
-/* ---------- Fullscreen toggle ---------- */
-fullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-  } else {
-    document.exitFullscreen();
-  }
-});
+    // ---------- Tam ekran ----------
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
 
-/* ---------- Initialisation ---------- */
-window.addEventListener('DOMContentLoaded', () => {
-  const savedCol = localStorage.getItem('clockColor');
-  if (savedCol) changeColor(savedCol);
-  updateClock();
-});
+    // ---------- Kayıtlı rengi yükle ----------
+    const savedColor = localStorage.getItem('clockColor');
+    if (savedColor) {
+      changeColor(savedColor);
+    } else {
+      // Varsayılan rengi input'a da yansıt
+      customColorInput.value = currentColor;
+    }
+
+    // Sayfa kapanırken interval'i temizle (iyi pratik)
+    window.addEventListener('beforeunload', () => clearInterval(intervalId));
+  })();
 </script>
 </body>
 </html>
