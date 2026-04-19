@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Countdown Timer - Fixed</title>
+<style>
+  body{background:#000;color:#e0e0e0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;user-select:none;}
+  h1{font-weight:700;margin-bottom:.3em;color:#944a32;}
+  #countdown{font-size:3em;font-weight:600;margin:20px 0;letter-spacing:2px;font-family:monospace;}
+  #message{font-size:1.3em;color:#90caf9;margin-top:15px;min-height:2em;font-style:italic;}
+  input[type="date"]{background:#1e1e1e;border:2px solid #944a32;border-radius:6px;color:#e0e0e0;font-size:1em;padding:10px 15px;margin-top:15px;cursor:pointer;outline:none;transition:border-color .3s ease;}
+  input[type="date"]:focus{border-color:#4caf50;}
+  @media(max-width:480px){#countdown{font-size:2em;}#message{font-size:1em;}}
+</style>
+</head>
+
+<body>
+<h1>Countdown Timer</h1>
+<label for="eventDate">Select event date:</label>
+<input type="date" id="eventDate" aria-label="Event Date"/>
+
+<div id="countdown">Choose a date</div>
+<div id="message"></div>
+
+<script>
+const msgs = [
+  "Patience is the key to success.",
+  "Every day is a new opportunity.",
+  "Success is the sum of small steps.",
+  "Use your time well and enjoy life.",
+  "Every second matters, chase your dreams!",
+  "Countdown has begun – power in you!",
+  "Move forward with determination; obstacles are just pauses.",
+  "Make the most of remaining time; let your light shine.",
+  "Remember: The darkest moment precedes dawn.",
+  "Time is not against you; dance with it."
+];
+
+const countdownEl = document.getElementById('countdown');
+const messageEl   = document.getElementById('message');
+const eventDateInput = document.getElementById('eventDate');
+let countdownInterval = null;
+let currentTargetDate = null;
+
+function updateCountdown(target) {
+  if (!target) return false;
+  
+  const now = new Date();
+  const diff = target - now;
+
+  if (diff <= 0) {
+    countdownEl.textContent = "🎉 Event started! 🎉";
+    messageEl.textContent = "Now's the time – give it your best.";
+    return false;
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  countdownEl.textContent = 
+    `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  // Show a motivational message based on days remaining
+  const msgIndex = Math.abs(days) % msgs.length;
+  messageEl.textContent = msgs[msgIndex];
+
+  return true;
+}
+
+function startCountdown(targetDate) {
+  // Clear any existing interval
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  
+  // First immediate update
+  const isValid = updateCountdown(targetDate);
+  
+  // If event not started yet, start the interval
+  if (isValid && targetDate > new Date()) {
+    countdownInterval = setInterval(() => {
+      // If target date passed, stop interval after update
+      if (!updateCountdown(targetDate) || new Date() >= targetDate) {
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+      }
+    }, 1000);
+  } else if (!isValid) {
+    // If event already started or date invalid, ensure no interval runs
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+  }
+}
+
+eventDateInput.addEventListener('change', () => {
+  const dateValue = eventDateInput.value;
+  
+  if (!dateValue) {
+    countdownEl.textContent = "📅 Please select a date";
+    messageEl.textContent = "";
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    return;
+  }
+  
+  // Create date at midnight LOCAL time (user's timezone)
+  const selectedDate = new Date(dateValue + 'T00:00:00');
+  
+  if (isNaN(selectedDate.getTime())) {
+    countdownEl.textContent = "❌ Invalid date";
+    messageEl.textContent = "Please choose a valid future date";
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    return;
+  }
+  
+  currentTargetDate = selectedDate;
+  startCountdown(currentTargetDate);
+});
+
+// Optional: Set a default example date (tomorrow) so users see something working
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+const yyyy = tomorrow.getFullYear();
+const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+const dd = String(tomorrow.getDate()).padStart(2, '0');
+eventDateInput.value = `${yyyy}-${mm}-${dd}`;
+// Trigger the countdown for the default date
+const defaultEvent = new Date(eventDateInput.value + 'T00:00:00');
+currentTargetDate = defaultEvent;
+startCountdown(currentTargetDate);
+</script>
+</body>
+</html>

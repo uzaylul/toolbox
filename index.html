@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Toolbox</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none; /* clean, no accidental text selection on UI */
+    }
+
+    body {
+      background-color: #000000;
+      font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, Roboto, sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* main area takes all remaining space after taskbar */
+    .app-main {
+      flex: 1;
+      position: relative;
+      background: #000000;
+      min-height: 0;
+    }
+
+    /* iframe wrapper – full size, no borders, no padding */
+    .iframe-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background-color: #0a0a0a;  /* dark fallback, avoids white flash */
+      display: block;
+    }
+
+    /* LOADING OVERLAY: black background + subtle spinner, hides when content loads */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #1f1f1f;
+      border-top: 4px solid #944a32;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* bottom taskbar – Windows style, compact, no emojis */
+    .taskbar {
+      background-color: #0a0a0a;
+      border-top: 1px solid #1f1f1f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 20px;
+      flex-wrap: wrap;
+      backdrop-filter: blur(0px);
+      z-index: 20;
+      flex-shrink: 0;
+      min-height: 68px;
+    }
+
+    /* taskbar buttons: show only first letter, clean accent background */
+    .taskbar-btn {
+      background-color: #944a32;
+      border: none;
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      color: white;
+      font-size: 1.7rem;
+      font-weight: 600;
+      font-family: inherit;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      letter-spacing: 0;
+      line-height: 1;
+    }
+
+    /* tooltip style on hover (full name) */
+    .taskbar-btn:hover {
+      background-color: #b45a3f;
+      transform: translateY(-3px);
+    }
+
+    .taskbar-btn:active {
+      transform: translateY(1px);
+      background-color: #7a3b28;
+    }
+
+    /* active tool indication: brighter border and inner glow */
+    .taskbar-btn.active {
+      background-color: #7a3b28;
+      box-shadow: 0 0 0 2px #ffb08c, 0 0 0 4px #944a3240;
+      transform: scale(0.98);
+    }
+
+    /* for very small screens, make buttons slightly smaller */
+    @media (max-width: 560px) {
+      .taskbar-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 1.4rem;
+        border-radius: 14px;
+      }
+      .taskbar {
+        gap: 8px;
+        padding: 6px 12px;
+        min-height: 62px;
+      }
+    }
+
+    /* optional: remove any outline for clean look */
+    .taskbar-btn:focus-visible {
+      outline: 2px solid #ffaa88;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-main">
+  <div class="iframe-wrapper">
+    <iframe id="toolFrame" title="tool viewer" src="about:blank"></iframe>
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<div class="taskbar" id="taskbarContainer"></div>
+
+<script>
+  // --------------------------------------------------------------
+  // TOOL LIST (all utility web apps)
+  // NEW: "Date" tool added (date.html) - provides calendar/date picker utility
+  // Display names are concise, first letter used as button label.
+  // Duplicate initials (multiple "C" tools) are differentiated by tooltip.
+  // --------------------------------------------------------------
+  const tools = [
+    { name: "Clock", file: "Tools/Clock.html" },
+    { name: "Date", file: "Tools/date.html" },            // ✅ NEW: date utility (calendar, date picker)
+    { name: "Countdown Timer", file: "Tools/CountdownTimer.html" },
+    { name: "Circular Cropper", file: "Tools/CircularCropper.html" },   // image cropper with circular boundary
+    { name: "Gradient Generator", file: "Tools/GradientGenerator.html" },
+    { name: "Grid Generator", file: "Tools/GridGenerator.html" },
+    { name: "Multi Tile", file: "Tools/MultiTile.html" },
+    { name: "Note Pad", file: "Tools/NotePad.html" },
+    { name: "Palette Generator", file: "Tools/PaletteGenerator.html" },
+    { name: "Text Cleaner", file: "Tools/TextCleaner.html" },
+    { name: "Text Statistics", file: "Tools/TextStatistics.html" }
+  ];
+
+  // DOM elements
+  const iframe = document.getElementById('toolFrame');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const taskbarContainer = document.getElementById('taskbarContainer');
+
+  let currentActiveTool = null;      // store active tool file path
+  let currentActiveButton = null;    // store button element for styling
+  let loadTimeout = null;
+
+  // helper to show/hide loading overlay with smooth transition
+  function showLoading() {
+    if (loadingOverlay) {
+      loadingOverlay.style.opacity = '1';
+      loadingOverlay.style.visibility = 'visible';
+      loadingOverlay.style.display = 'flex';
+    }
+  }
+
+  function hideLoading() {
+    if (loadingOverlay) {
+      loadingOverlay.style.opacity = '0';
+      // after transition ends, set display none to avoid blocking clicks
+      setTimeout(() => {
+        if (loadingOverlay.style.opacity === '0') {
+          loadingOverlay.style.display = 'none';
+        }
+      }, 200);
+    }
+  }
+
+  // pre-set iframe background to pure black (avoids any white flash before loading)
+  iframe.style.backgroundColor = '#000000';
+
+  // load tool with smooth loading overlay (eliminates white screen flicker)
+  function loadTool(toolFile, buttonElement) {
+    if (!toolFile) return;
+    // prevent reloading the same tool if already active
+    if (currentActiveTool === toolFile) return;
+
+    // update active button styles
+    if (currentActiveButton) {
+      currentActiveButton.classList.remove('active');
+    }
+    if (buttonElement) {
+      buttonElement.classList.add('active');
+      currentActiveButton = buttonElement;
+    }
+
+    // show loading overlay (spinner on black background)
+    showLoading();
+    loadingOverlay.style.display = 'flex';
+
+    // set new src -> triggers load event
+    currentActiveTool = toolFile;
+    iframe.src = toolFile;
+
+    // clear any previous timeout to avoid race conditions
+    if (loadTimeout) clearTimeout(loadTimeout);
+    // fallback: if iframe load event fails (network error or slow), hide loading after max 3 seconds
+    loadTimeout = setTimeout(() => {
+      if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+        hideLoading();
+      }
+    }, 2500);
+  }
+
+  // once iframe content loads, hide the spinner smoothly
+  iframe.addEventListener('load', () => {
+    // small delay to avoid flicker if tool loads extremely fast
+    setTimeout(() => {
+      hideLoading();
+      if (loadTimeout) clearTimeout(loadTimeout);
+    }, 80);
+  });
+
+  // error handling: if iframe fails to load, still hide loading overlay
+  iframe.addEventListener('error', () => {
+    hideLoading();
+    if (loadTimeout) clearTimeout(loadTimeout);
+    console.warn(`Failed to load: ${currentActiveTool}`);
+  });
+
+  // Build taskbar: each button shows only the first letter of the tool name.
+  // For duplicate initials (e.g., Clock, Countdown Timer, Circular Cropper all start with 'C'),
+  // the user can rely on tooltip (full name) on hover.
+  // The new "Date" tool uses 'D' as initial (unique and descriptive).
+  function buildTaskbar() {
+    taskbarContainer.innerHTML = '';
+    tools.forEach((tool, idx) => {
+      const fullName = tool.name;
+      // get first character, uppercase (e.g., 'C' for Clock, Countdown Timer, Circular Cropper, 'D' for Date)
+      let initial = fullName.charAt(0).toUpperCase();
+      
+      const button = document.createElement('button');
+      button.className = 'taskbar-btn';
+      button.textContent = initial;
+      button.title = fullName;   // full name on hover reveals exact tool (Date, Circular Cropper, etc.)
+      button.dataset.file = tool.file;
+      button.dataset.name = fullName;
+
+      // click handler
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadTool(tool.file, button);
+      });
+
+      taskbarContainer.appendChild(button);
+
+      // set first tool as active by default after dom ready (Clock)
+      if (idx === 0) {
+        setTimeout(() => {
+          if (!currentActiveTool) {
+            loadTool(tool.file, button);
+          }
+        }, 30);
+      }
+    });
+  }
+
+  // additional safety: if any external tool page has white background, the iframe wrapper remains black during transitions
+  // Also ensure that body background stays black and no extra spacing.
+  function init() {
+    buildTaskbar();
+    // if for some reason loading overlay remains visible after everything (edge), hide it
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (iframe.src !== 'about:blank' && loadingOverlay.style.display !== 'none') {
+          hideLoading();
+        }
+      }, 500);
+    });
+  }
+
+  // start the application
+  init();
+</script>
+</body>
+</html>

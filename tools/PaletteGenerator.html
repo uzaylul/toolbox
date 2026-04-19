@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Palette Generator</title>
+<style>
+  :root{
+    --bg: #000;
+    --text:#eee;
+    --input-bg:#111;
+    --input-border:#444;
+    --btn:#944a32;            /* brown accent */
+    --btn-hover:#944a32;
+  }
+  body{
+    font-family:'Segoe UI',Tahoma,Helvetica,sans-serif;
+    margin:20px;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  h1{margin-bottom:10px;color:inherit}
+  .input-area{
+    margin-bottom:20px;
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:center
+  }
+  input[type=text]{
+    padding:8px;font-size:1rem;width:120px;border-radius:6px;
+    border:1px solid var(--input-border);
+    background:var(--input-bg);color:var(--text);
+    text-transform:uppercase;transition:.3s
+  }
+  button{
+    padding:8px 16px;background:var(--btn);color:#fff;font-weight:bold;
+    border:none;border-radius:6px;cursor:pointer;transition:.3s
+  }
+  button:hover{background:var(--btn-hover)}
+  .palette{
+    display:flex;gap:15px;margin-top:20px;
+    flex-wrap:wrap;justify-content:center;max-width:600px
+  }
+  .color-box{
+    width:100px;height:120px;border-radius:8px;
+    box-shadow:0 0 5px rgba(255,255,255,.2);
+    display:flex;flex-direction:column;align-items:center;
+    justify-content:center;color:#fff;font-weight:600;
+    position:relative;transition:.3s
+  }
+  .color-code{
+    margin-top:8px;background:rgba(255,255,255,.15);
+    padding:4px 8px;border-radius:4px;cursor:pointer;transition:.3s
+  }
+  .tooltip{
+    position:absolute;top:10px;background:#222;color:#fff;
+    padding:4px 8px;border-radius:4px;font-size:.8rem;
+    opacity:0;pointer-events:none;transition:.3s
+  }
+  .tooltip.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+
+<body>
+
+<h1>Palette Generator</h1>
+<p>Enter hex codes to create color palettes.</p>
+
+<div class="input-area">
+  <input type="text" placeholder="#RRGGBB" maxlength="7"/>
+  <input type="text" placeholder="#RRGGBB" maxlength="7"/>
+  <input type="text" placeholder="#RRGGBB" maxlength="7"/>
+  <input type="text" placeholder="#RRGGBB" maxlength="7"/>
+  <input type="text" placeholder="#RRGGBB" maxlength="7"/>
+  <button onclick="create()">Generate</button>
+</div>
+
+<div id="palette" class="palette"></div>
+
+<script>
+const body = document.body;
+
+function valid(c){return /^#([0-9A-F]{6})$/i.test(c);}
+function adjust(h,amt){
+  let c=h.slice(1), n=parseInt(c,16);
+  let r=(n>>16)+amt, g=((n>>8)&0xFF)+amt, b=(n&0xFF)+amt;
+  r=Math.min(255,Math.max(0,r));
+  g=Math.min(255,Math.max(0,g));
+  b=Math.min(255,Math.max(0,b));
+  return "#" + ((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1).toUpperCase();
+}
+function create(){
+  const pal=document.getElementById('palette');pal.innerHTML='';
+  const vals=[...document.querySelectorAll('.input-area input')]
+              .map(i=>i.value.trim().toUpperCase())
+              .filter(valid);
+  if(!vals.length){alert('Enter at least one valid hex code.');return}
+  vals.forEach(base=>{
+    [0,30,-30].forEach(a=>{
+      const col=a?adjust(base,a):base;
+      const box=document.createElement('div');box.className='color-box';
+      box.style.background=col;
+      const code=document.createElement('div');code.className='color-code';
+      code.textContent=col;
+      code.onclick=e=>{navigator.clipboard.writeText(col).then(()=>show(box,'Copied!'))};
+      box.appendChild(code);pal.appendChild(box);
+    });
+  });
+}
+function show(el,msg){
+  let t=el.querySelector('.tooltip');if(!t){t=document.createElement('div');t.className='tooltip';el.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1500);
+}
+</script>
+</body>
+</html>
