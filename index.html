@@ -172,20 +172,22 @@
 <script>
   // --------------------------------------------------------------
   // TOOL LIST (all utility web apps)
-  // NEW: "Date" tool added (date.html) - provides calendar/date picker utility
-  // Display names are concise, first letter used as button label.
-  // Duplicate initials (multiple "C" tools) are differentiated by tooltip.
+  // Includes: Clock, Date, Countdown Timer, Circular Cropper,
+  // Gradient Generator, Grid Generator, Multi Tile, Note Pad,
+  // Palette Generator, QR Generator, Text Cleaner, Text Statistics.
+  // Display names are concise; first letter used as button label.
   // --------------------------------------------------------------
   const tools = [
     { name: "Clock", file: "Clock.html" },
-    { name: "Date", file: "date.html" },            // ✅ NEW: date utility (calendar, date picker)
+    { name: "Date", file: "date.html" },
     { name: "Countdown Timer", file: "CountdownTimer.html" },
-    { name: "Circular Cropper", file: "CircularCropper.html" },   // image cropper with circular boundary
+    { name: "Circular Cropper", file: "CircularCropper.html" },
     { name: "Gradient Generator", file: "GradientGenerator.html" },
     { name: "Grid Generator", file: "GridGenerator.html" },
     { name: "Multi Tile", file: "MultiTile.html" },
     { name: "Note Pad", file: "NotePad.html" },
     { name: "Palette Generator", file: "PaletteGenerator.html" },
+    { name: "QR Generator", file: "QRGenerator.html" },    // ✅ YENİ: QR kodu oluşturucu
     { name: "Text Cleaner", file: "TextCleaner.html" },
     { name: "Text Statistics", file: "TextStatistics.html" }
   ];
@@ -273,20 +275,17 @@
   });
 
   // Build taskbar: each button shows only the first letter of the tool name.
-  // For duplicate initials (e.g., Clock, Countdown Timer, Circular Cropper all start with 'C'),
-  // the user can rely on tooltip (full name) on hover.
-  // The new "Date" tool uses 'D' as initial (unique and descriptive).
   function buildTaskbar() {
     taskbarContainer.innerHTML = '';
     tools.forEach((tool, idx) => {
       const fullName = tool.name;
-      // get first character, uppercase (e.g., 'C' for Clock, Countdown Timer, Circular Cropper, 'D' for Date)
+      // get first character, uppercase (e.g., 'Q' for QR Generator)
       let initial = fullName.charAt(0).toUpperCase();
       
       const button = document.createElement('button');
       button.className = 'taskbar-btn';
       button.textContent = initial;
-      button.title = fullName;   // full name on hover reveals exact tool (Date, Circular Cropper, etc.)
+      button.title = fullName;   // full name on hover (QR Generator vs Palette Generator)
       button.dataset.file = tool.file;
       button.dataset.name = fullName;
 
@@ -310,7 +309,6 @@
   }
 
   // additional safety: if any external tool page has white background, the iframe wrapper remains black during transitions
-  // Also ensure that body background stays black and no extra spacing.
   function init() {
     buildTaskbar();
     // if for some reason loading overlay remains visible after everything (edge), hide it
