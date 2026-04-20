@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Banner Maker · Opacity & Overlap Fix</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    body {
+      background: black;
+      font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: #eee;
+      accent-color: #944A32;
+    }
+
+    button, .file-label, select, input[type="color"] {
+      background: #1e1e1e;
+      border: 1px solid #944A32;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.9rem;
+    }
+
+    button:hover, .file-label:hover, select:hover {
+      background: #2a2a2a;
+      border-color: #b85f42;
+    }
+
+    input[type="range"] {
+      width: 140px;
+      margin: 0 8px;
+    }
+
+    .control-panel {
+      background: #0b0b0b;
+      border-bottom: 2px solid #944A32;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      z-index: 5;
+    }
+
+    .panel-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .panel-group label {
+      color: #ccc;
+      font-size: 0.85rem;
+      letter-spacing: 0.3px;
+    }
+
+    .value-badge {
+      background: #1a1a1a;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      border-left: 3px solid #944A32;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .image-manager {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    #imageSelect {
+      min-width: 180px;
+      background: black;
+    }
+
+    .file-label {
+      display: inline-block;
+      background: #1e1e1e;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .canvas-wrapper {
+      flex: 1;
+      background: black;
+      position: relative;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      background: black;
+      cursor: default;
+      box-shadow: 0 0 0 1px #333;
+    }
+
+    .canvas-wrapper.fixed-canvas-mode canvas {
+      width: auto;
+      height: auto;
+    }
+
+    .accent-text {
+      color: #944A32;
+      font-weight: 600;
+    }
+
+    button.download-btn {
+      background: #944A32;
+      border-color: #b86a4f;
+      color: white;
+      font-weight: bold;
+    }
+
+    button.download-btn:hover {
+      background: #b55f44;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #1a1a1a;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid #3a2a24;
+    }
+
+    .checkbox-row input {
+      margin: 0;
+      width: 18px;
+      height: 18px;
+    }
+
+    .zoom-stepper {
+      display: flex;
+      gap: 4px;
+      margin-left: 6px;
+    }
+
+    .zoom-stepper button {
+      padding: 4px 10px;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .canvas-size-indicator {
+      font-family: monospace;
+      background: #1a1a1a;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid #444;
+    }
+  </style>
+</head>
+<body>
+
+<div class="control-panel">
+  <!-- Zoom with step buttons -->
+  <div class="panel-group">
+    <label>Zoom</label>
+    <input type="range" id="zoomSlider" min="0.1" max="3.0" value="1.0" step="0.01">
+    <span class="value-badge" id="zoomValue">1.00x</span>
+    <div class="zoom-stepper">
+      <button id="zoomOutBtn" title="Zoom out (min 0.1)">−</button>
+      <button id="zoomInBtn" title="Zoom in (max 3.0)">+</button>
+    </div>
+  </div>
+
+  <div class="panel-group">
+    <label>Spacing</label>
+    <input type="range" id="spacingSlider" min="0" max="120" value="0" step="1">
+    <span class="value-badge" id="spacingValue">0 px</span>
+  </div>
+
+  <div class="panel-group">
+    <label>Offset X</label>
+    <input type="range" id="offsetXSlider" min="-300" max="300" value="0" step="1">
+    <span class="value-badge" id="offsetXValue">0 px</span>
+  </div>
+
+  <div class="panel-group">
+    <label>Offset Y</label>
+    <input type="range" id="offsetYSlider" min="-300" max="300" value="0" step="1">
+    <span class="value-badge" id="offsetYValue">0 px</span>
+  </div>
+
+  <!-- NEW: Opacity slider -->
+  <div class="panel-group">
+    <label>Opacity</label>
+    <input type="range" id="opacitySlider" min="0.1" max="1.0" value="1.0" step="0.01">
+    <span class="value-badge" id="opacityValue">1.00</span>
+  </div>
+
+  <div class="panel-group">
+    <label>BG</label>
+    <input type="color" id="bgColorPicker" value="#000000" style="width: 50px; height: 34px; padding: 2px;">
+  </div>
+
+  <!-- Fixed 1920x1080 -->
+  <div class="checkbox-row">
+    <input type="checkbox" id="fixedCanvasCheckbox">
+    <label for="fixedCanvasCheckbox">1920x1080 fixed</label>
+    <span class="canvas-size-indicator" id="canvasSizeDisplay">(responsive)</span>
+  </div>
+
+  <!-- Multi‑image tile toggle -->
+  <div class="checkbox-row">
+    <input type="checkbox" id="multiImageCheckbox">
+    <label for="multiImageCheckbox">Multi‑image tile</label>
+  </div>
+
+  <div class="image-manager">
+    <label class="file-label">
+      Upload images
+      <input type="file" id="fileInput" accept="image/*" multiple>
+    </label>
+    <select id="imageSelect" title="Active tile image (single mode)"></select>
+    <button id="removeImageBtn" title="Remove selected image">Remove</button>
+  </div>
+
+  <div class="panel-group">
+    <button id="resetDefaultsBtn" title="Reset zoom, spacing, offsets, opacity">Reset</button>
+    <button id="downloadBtn" class="download-btn" title="Download wallpaper as PNG (fixed size if enabled)">Download PNG</button>
+  </div>
+</div>
+
+<!-- Canvas area -->
+<div class="canvas-wrapper" id="canvasWrapper">
+  <canvas id="wallpaperCanvas"></canvas>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    // ----- DOM elements -----
+    const canvas = document.getElementById('wallpaperCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvasWrapper');
+    
+    const zoomSlider = document.getElementById('zoomSlider');
+    const spacingSlider = document.getElementById('spacingSlider');
+    const offsetXSlider = document.getElementById('offsetXSlider');
+    const offsetYSlider = document.getElementById('offsetYSlider');
+    const opacitySlider = document.getElementById('opacitySlider');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    
+    const zoomValue = document.getElementById('zoomValue');
+    const spacingValue = document.getElementById('spacingValue');
+    const offsetXValue = document.getElementById('offsetXValue');
+    const offsetYValue = document.getElementById('offsetYValue');
+    const opacityValue = document.getElementById('opacityValue');
+    
+    const fileInput = document.getElementById('fileInput');
+    const imageSelect = document.getElementById('imageSelect');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+    const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    
+    const fixedCanvasCheckbox = document.getElementById('fixedCanvasCheckbox');
+    const multiImageCheckbox = document.getElementById('multiImageCheckbox');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const canvasSizeDisplay = document.getElementById('canvasSizeDisplay');
+    
+    // ----- State -----
+    let images = [];                // { id, file, imgElement, name, loaded }
+    let activeImageId = null;       
+    let nextId = 0;
+    
+    // Drawing parameters
+    let zoom = 1.0;
+    let spacing = 0;
+    let offsetX = 0;
+    let offsetY = 0;
+    let opacity = 1.0;              // NEW
+    let bgColor = '#000000';
+    
+    let multiImageMode = false;
+    let fixedCanvasMode = false;
+    
+    let uniformBaseWidth = 100;
+    let uniformBaseHeight = 100;
+    
+    // ----- Helper: update UI displays -----
+    function updateSliderDisplays() {
+      zoomValue.textContent = zoom.toFixed(2) + 'x';
+      spacingValue.textContent = spacing + ' px';
+      offsetXValue.textContent = offsetX + ' px';
+      offsetYValue.textContent = offsetY + ' px';
+      opacityValue.textContent = opacity.toFixed(2);
+    }
+    
+    function readSlidersToState() {
+      zoom = parseFloat(zoomSlider.value);
+      spacing = parseInt(spacingSlider.value, 10);
+      offsetX = parseInt(offsetXSlider.value, 10);
+      offsetY = parseInt(offsetYSlider.value, 10);
+      opacity = parseFloat(opacitySlider.value);
+      bgColor = bgColorPicker.value;
+      updateSliderDisplays();
+    }
+    
+    function applyStateToSliders() {
+      zoomSlider.value = zoom;
+      spacingSlider.value = spacing;
+      offsetXSlider.value = offsetX;
+      offsetYSlider.value = offsetY;
+      opacitySlider.value = opacity;
+      bgColorPicker.value = bgColor;
+      updateSliderDisplays();
+    }
+    
+    function recomputeUniformSize() {
+      let maxW = 10, maxH = 10;
+      images.forEach(imgObj => {
+        const img = imgObj.imgElement;
+        if (img && img.complete && img.naturalWidth > 0) {
+          maxW = Math.max(maxW, img.naturalWidth);
+          maxH = Math.max(maxH, img.naturalHeight);
+        }
+      });
+      uniformBaseWidth = maxW;
+      uniformBaseHeight = maxH;
+    }
+    
+    function drawCover(img, x, y, w, h) {
+      const imgW = img.naturalWidth;
+      const imgH = img.naturalHeight;
+      if (imgW === 0 || imgH === 0) return;
+      
+      const targetRatio = w / h;
+      const imgRatio = imgW / imgH;
+      
+      let srcX = 0, srcY = 0, srcW = imgW, srcH = imgH;
+      
+      if (imgRatio > targetRatio) {
+        srcW = imgH * targetRatio;
+        srcX = (imgW - srcW) / 2;
+      } else {
+        srcH = imgW / targetRatio;
+        srcY = (imgH - srcH) / 2;
+      }
+      
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, x, y, w, h);
+    }
+    
+    function applyCanvasSize() {
+      if (fixedCanvasMode) {
+        canvas.width = 1920;
+        canvas.height = 1080;
+        canvas.style.width = 'auto';
+        canvas.style.height = 'auto';
+        wrapper.classList.add('fixed-canvas-mode');
+        canvasSizeDisplay.textContent = '(1920x1080)';
+      } else {
+        const containerWidth = wrapper.clientWidth;
+        const containerHeight = wrapper.clientHeight;
+        if (containerWidth > 0 && containerHeight > 0) {
+          canvas.width = containerWidth;
+          canvas.height = containerHeight;
+        } else {
+          canvas.width = 1280;
+          canvas.height = 720;
+        }
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        wrapper.classList.remove('fixed-canvas-mode');
+        canvasSizeDisplay.textContent = `(${canvas.width}x${canvas.height})`;
+      }
+    }
+    
+    function drawTiles() {
+      applyCanvasSize();
+      
+      // Background (full opacity)
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const loadedImages = images.filter(obj => obj.imgElement.complete && obj.imgElement.naturalWidth > 0);
+      
+      if (loadedImages.length === 0) {
+        ctx.font = '18px system-ui, sans-serif';
+        ctx.fillStyle = '#aaaaaa';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Upload images to start tiling', canvas.width/2, canvas.height/2);
+        return;
+      }
+      
+      let tileW, tileH;
+      if (multiImageMode) {
+        recomputeUniformSize();
+        tileW = uniformBaseWidth * zoom;
+        tileH = uniformBaseHeight * zoom;
+      } else {
+        let activeImg = null;
+        if (activeImageId !== null) {
+          const activeObj = images.find(obj => obj.id === activeImageId);
+          activeImg = activeObj ? activeObj.imgElement : null;
+        }
+        if (!activeImg || !activeImg.complete || activeImg.naturalWidth === 0) {
+          activeImg = loadedImages[0].imgElement;
+        }
+        tileW = activeImg.naturalWidth * zoom;
+        tileH = activeImg.naturalHeight * zoom;
+      }
+      
+      const stepX = tileW + spacing;
+      const stepY = tileH + spacing;
+      
+      let startX = offsetX % stepX;
+      let startY = offsetY % stepY;
+      if (startX > 0) startX -= stepX;
+      if (startY > 0) startY -= stepY;
+      
+      let imageCycle = [];
+      if (multiImageMode) {
+        imageCycle = loadedImages.map(obj => obj.imgElement);
+      } else {
+        let activeImg = null;
+        if (activeImageId !== null) {
+          const activeObj = images.find(obj => obj.id === activeImageId);
+          activeImg = activeObj ? activeObj.imgElement : null;
+        }
+        if (!activeImg || !activeImg.complete) {
+          activeImg = loadedImages[0].imgElement;
+        }
+        if (activeImg) imageCycle = [activeImg];
+      }
+      
+      if (imageCycle.length === 0) return;
+      
+      // ---- APPLY OPACITY (fixes overlapping by blending) ----
+      ctx.globalAlpha = opacity;
+      
+      let imgIndex = 0;
+      for (let y = startY; y < canvas.height + tileH; y += stepY) {
+        for (let x = startX; x < canvas.width + tileW; x += stepX) {
+          const img = imageCycle[imgIndex % imageCycle.length];
+          if (multiImageMode) {
+            drawCover(img, x, y, tileW, tileH);
+          } else {
+            ctx.drawImage(img, x, y, tileW, tileH);
+          }
+          imgIndex++;
+        }
+      }
+      
+      // Reset alpha
+      ctx.globalAlpha = 1.0;
+    }
+    
+    function redraw() {
+      readSlidersToState();
+      multiImageMode = multiImageCheckbox.checked;
+      fixedCanvasMode = fixedCanvasCheckbox.checked;
+      drawTiles();
+      if (fixedCanvasMode) {
+        canvasSizeDisplay.textContent = '(1920x1080)';
+      } else {
+        canvasSizeDisplay.textContent = `(${canvas.width}x${canvas.height})`;
+      }
+    }
+    
+    function rebuildImageSelect() {
+      const currentActive = activeImageId;
+      imageSelect.innerHTML = '';
+      
+      if (images.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = '— No images —';
+        option.value = '';
+        option.disabled = true;
+        imageSelect.appendChild(option);
+        activeImageId = null;
+        redraw();
+        return;
+      }
+      
+      images.forEach(imgObj => {
+        const option = document.createElement('option');
+        option.value = imgObj.id;
+        let status = imgObj.loaded ? '' : ' (loading)';
+        option.textContent = imgObj.name + status;
+        if (imgObj.id === currentActive) option.selected = true;
+        imageSelect.appendChild(option);
+      });
+      
+      const exists = images.some(img => img.id === activeImageId);
+      if (!exists && images.length > 0) {
+        activeImageId = images[0].id;
+        imageSelect.value = activeImageId;
+      } else if (images.length > 0 && activeImageId) {
+        imageSelect.value = activeImageId;
+      }
+      
+      if (imageSelect.value) {
+        activeImageId = Number(imageSelect.value);
+      }
+      recomputeUniformSize();
+      redraw();
+    }
+    
+    function addImagesFromFiles(files) {
+      if (!files.length) return;
+      
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const id = nextId++;
+        const img = new Image();
+        const name = file.name;
+        
+        const imgObj = { id, file, imgElement: img, name, loaded: false };
+        
+        img.onload = function() {
+          imgObj.loaded = true;
+          const option = imageSelect.querySelector(`option[value="${id}"]`);
+          if (option) option.textContent = name;
+          recomputeUniformSize();
+          if (activeImageId === id || multiImageMode) redraw();
+          else if (images.length === 1) redraw();
+        };
+        
+        img.onerror = function() {
+          console.warn('Failed to load image:', name);
+          imgObj.loaded = false;
+        };
+        
+        img.src = URL.createObjectURL(file);
+        images.push(imgObj);
+      });
+      
+      rebuildImageSelect();
+      if (activeImageId === null && images.length > 0) {
+        activeImageId = images[0].id;
+        imageSelect.value = activeImageId;
+      }
+      recomputeUniformSize();
+      redraw();
+    }
+    
+    function removeSelectedImage() {
+      if (activeImageId === null) return;
+      const index = images.findIndex(img => img.id === activeImageId);
+      if (index === -1) return;
+      
+      const removed = images.splice(index, 1)[0];
+      if (removed.imgElement.src) URL.revokeObjectURL(removed.imgElement.src);
+      
+      rebuildImageSelect();
+      if (images.length > 0) {
+        activeImageId = images[0].id;
+        imageSelect.value = activeImageId;
+      } else {
+        activeImageId = null;
+      }
+      recomputeUniformSize();
+      redraw();
+    }
+    
+    function resetToDefaults() {
+      zoom = 1.0;
+      spacing = 0;
+      offsetX = 0;
+      offsetY = 0;
+      opacity = 1.0;                // reset opacity
+      bgColor = '#000000';
+      applyStateToSliders();
+      multiImageCheckbox.checked = false;
+      fixedCanvasCheckbox.checked = false;
+      multiImageMode = false;
+      fixedCanvasMode = false;
+      redraw();
+    }
+    
+    function downloadWallpaper() {
+      redraw(); 
+      const link = document.createElement('a');
+      link.download = `wallpaper-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    function adjustZoom(delta) {
+      let newZoom = zoom + delta;
+      newZoom = Math.min(3.0, Math.max(0.1, newZoom));
+      zoom = newZoom;
+      zoomSlider.value = zoom;
+      redraw();
+    }
+    
+    function initEvents() {
+      zoomSlider.addEventListener('input', redraw);
+      spacingSlider.addEventListener('input', redraw);
+      offsetXSlider.addEventListener('input', redraw);
+      offsetYSlider.addEventListener('input', redraw);
+      opacitySlider.addEventListener('input', redraw);
+      bgColorPicker.addEventListener('input', redraw);
+      
+      multiImageCheckbox.addEventListener('change', redraw);
+      fixedCanvasCheckbox.addEventListener('change', redraw);
+      
+      zoomInBtn.addEventListener('click', () => adjustZoom(0.1));
+      zoomOutBtn.addEventListener('click', () => adjustZoom(-0.1));
+      
+      fileInput.addEventListener('change', (e) => {
+        addImagesFromFiles(e.target.files);
+        fileInput.value = '';
+      });
+      
+      imageSelect.addEventListener('change', (e) => {
+        const newId = Number(e.target.value);
+        if (!isNaN(newId)) activeImageId = newId;
+        redraw();
+      });
+      
+      removeImageBtn.addEventListener('click', removeSelectedImage);
+      resetDefaultsBtn.addEventListener('click', resetToDefaults);
+      downloadBtn.addEventListener('click', downloadWallpaper);
+      
+      window.addEventListener('resize', () => {
+        if (!fixedCanvasMode) {
+          redraw();
+        } else {
+          redraw();
+        }
+      });
+    }
+    
+    function initialize() {
+      zoom = 1.0; spacing = 0; offsetX = 0; offsetY = 0; opacity = 1.0; bgColor = '#000000';
+      applyStateToSliders();
+      multiImageCheckbox.checked = false;
+      fixedCanvasCheckbox.checked = false;
+      
+      rebuildImageSelect();
+      applyCanvasSize();
+      drawTiles();
+      initEvents();
+    }
+    
+    initialize();
+  })();
+</script>
+</body>
+</html>

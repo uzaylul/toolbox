@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multi Tile</title>
+    <style>
+        /* ----- BLACK BACKGROUND & ACCENT #944a32 ----- */
+        body {
+            background: #000000;
+            color: #f0f0f0;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            background: #000000;
+            padding: 24px;
+            border-radius: 24px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.7);
+            max-width: 1300px;
+            width: fit-content;
+            border: 1px solid #000000;
+        }
+        h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 1.7rem;
+            color: #e0e0e0;
+            letter-spacing: -0.5px;
+        }
+        h1 span {
+            color: #944a32;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 20px;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #000000;
+            padding: 20px 25px;
+            border-radius: 50px;
+            border: 1px solid #333;
+        }
+
+        .file-input {
+            background: #944a32;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            border: none;
+            transition: background 0.2s;
+        }
+        .file-input:hover {
+            background: #7a3d29;
+        }
+        input[type="file"] {
+            display: none;
+        }
+
+        .slider-container, .select-container, .color-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: #000000;
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #000000;
+        }
+        .slider-container label, .select-container label, .color-container label {
+            font-weight: 500;
+            color: #c0a89a; /* soft accent tone */
+        }
+        input[type="range"] {
+            width: 130px;
+            cursor: pointer;
+            background: #000000;
+            height: 6px;
+            border-radius: 10px;
+            accent-color: #944a32;
+        }
+        .value-badge {
+            background: #000000;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #d4c4bc;
+            border: 1px solid #3a2a24;
+        }
+        select {
+            background: #000000;
+            color: white;
+            border: 2px solid #944a32;
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        input[type="color"] {
+            width: 50px;
+            height: 35px;
+            border: 2px solid #944a32;
+            border-radius: 12px;
+            background: transparent;
+            cursor: pointer;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px #000000;
+            background: #000000;
+            border: 2px solid #000000;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 1.1rem;
+            color: #b0a59e;
+        }
+        button {
+            background: #944a32;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 32px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #b45f44;
+        }
+        button:hover {
+            background: #7a3d29;
+            transform: scale(1.02);
+            border-color: #c96e50;
+        }
+        .file-info {
+            background: #000000;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            color: #c0a89a;
+            border: 1px solid #3a2a24;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Multi Tile</h1>
+
+    <div class="control-panel">
+        <label class="file-input">
+            Select Images (multiple)
+            <input type="file" id="fileInput" accept="image/*" multiple>
+        </label>
+
+        <div class="slider-container">
+            <label>Proximity:</label>
+            <input type="range" id="scaleSlider" min="0.1" max="3.0" value="1.0" step="0.01">
+            <span class="value-badge" id="scaleDisplay">1.00x</span>
+        </div>
+
+        <div class="slider-container">
+            <label>Gap:</label>
+            <input type="range" id="gapSlider" min="0" max="100" value="0" step="1">
+            <span class="value-badge" id="gapDisplay">0px</span>
+        </div>
+
+        <div class="slider-container">
+            <label>Opacity:</label>
+            <input type="range" id="opacitySlider" min="0" max="1" value="1" step="0.01">
+            <span class="value-badge" id="opacityDisplay">1.00</span>
+        </div>
+
+        <div class="select-container">
+            <label>Blend mode:</label>
+            <select id="mixMode">
+                <option value="sequential">Sequential</option>
+                <option value="random">Random</option>
+            </select>
+        </div>
+
+        <div class="color-container">
+            <label>Background:</label>
+            <input type="color" id="bgColor" value="#000000">
+        </div>
+
+        <div class="file-info" id="fileCount">0 images loaded</div>
+    </div>
+
+    <canvas id="canvas" width="1920" height="1080"></canvas>
+
+    <div class="info">
+        <span>Canvas: 1920x1080</span>
+        <span id="tileCount">Tiles: 0 x 0</span>
+    </div>
+
+    <div style="display: flex; justify-content: center; margin-top: 24px;">
+        <button id="downloadBtn">Save as PNG</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
+    const scaleSlider = document.getElementById('scaleSlider');
+    const scaleDisplay = document.getElementById('scaleDisplay');
+    const gapSlider = document.getElementById('gapSlider');
+    const gapDisplay = document.getElementById('gapDisplay');
+    const opacitySlider = document.getElementById('opacitySlider');
+    const opacityDisplay = document.getElementById('opacityDisplay');
+    const mixModeSelect = document.getElementById('mixMode');
+    const bgColorInput = document.getElementById('bgColor');
+    const tileCountSpan = document.getElementById('tileCount');
+    const fileCountSpan = document.getElementById('fileCount');
+
+    let images = [];
+    let imagesLoaded = false;
+
+    // Update UI values and redraw
+    function updateAll() {
+        scaleDisplay.textContent = parseFloat(scaleSlider.value).toFixed(2) + 'x';
+        gapDisplay.textContent = gapSlider.value + 'px';
+        opacityDisplay.textContent = parseFloat(opacitySlider.value).toFixed(2);
+        if (images.length > 0) drawTiles();
+    }
+
+    scaleSlider.addEventListener('input', updateAll);
+    gapSlider.addEventListener('input', updateAll);
+    opacitySlider.addEventListener('input', updateAll);
+    mixModeSelect.addEventListener('change', () => {
+        if (images.length > 0) drawTiles();
+    });
+    bgColorInput.addEventListener('input', () => {
+        if (images.length > 0) drawTiles();
+    });
+
+    // Load multiple images
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) {
+            images = [];
+            fileCountSpan.textContent = '0 images loaded';
+            drawTiles();
+            return;
+        }
+
+        fileCountSpan.textContent = `${files.length} images loading...`;
+
+        let loadedCount = 0;
+        const loadedImages = [];
+
+        files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedImages[index] = img;
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        images = loadedImages.filter(img => img !== undefined);
+                        fileCountSpan.textContent = `${images.length} images loaded`;
+                        // Reset to neutral defaults
+                        scaleSlider.value = '1.0';
+                        gapSlider.value = '0';
+                        opacitySlider.value = '1';
+                        bgColorInput.value = '#000000';
+                        mixModeSelect.value = 'sequential';
+                        updateAll();
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    // Draw tiled pattern
+    function drawTiles() {
+        if (images.length === 0) {
+            ctx.fillStyle = bgColorInput.value;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            tileCountSpan.textContent = 'Tiles: 0 x 0';
+            return;
+        }
+
+        const scale = parseFloat(scaleSlider.value);
+        const gap = parseInt(gapSlider.value, 10);
+        const opacity = parseFloat(opacitySlider.value);
+        const bgColor = bgColorInput.value;
+        const mixMode = mixModeSelect.value;
+
+        // Use first image as reference for tile cell size (consistent grid)
+        const baseImg = images[0];
+        const baseW = baseImg.width;
+        const baseH = baseImg.height;
+
+        const tileW = baseW * scale;
+        const tileH = baseH * scale;
+        const stepX = tileW + gap;
+        const stepY = tileH + gap;
+
+        const cols = Math.ceil((canvas.width - tileW) / stepX) + 1;
+        const rows = Math.ceil((canvas.height - tileH) / stepY) + 1;
+
+        tileCountSpan.textContent = `Tiles: ${cols} x ${rows}`;
+
+        // Clear background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = c * stepX;
+                const y = r * stepY;
+
+                let imgIndex;
+                if (mixMode === 'sequential') {
+                    imgIndex = (r * cols + c) % images.length;
+                } else {
+                    imgIndex = Math.floor(Math.random() * images.length);
+                }
+                const img = images[imgIndex];
+
+                // Draw image using its own dimensions * scale (may vary, but keeps original aspect)
+                const w = img.width * scale;
+                const h = img.height * scale;
+                ctx.drawImage(img, x, y, w, h);
+            }
+        }
+
+        ctx.restore();
+    }
+
+    // Download as PNG
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+        if (images.length === 0) {
+            alert('Please load at least one image first.');
+            return;
+        }
+        const link = document.createElement('a');
+        link.download = 'tile-pattern-1920x1080.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+</script>
+</body>
+</html>

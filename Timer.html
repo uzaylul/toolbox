@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Timer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: black;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      padding: 16px;
+      color: #e0e0e0;
+    }
+
+    /* main container */
+    .timer-app {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* global fullscreen button */
+    .global-fullscreen-btn {
+      align-self: flex-end;
+      background: transparent;
+      border: 1.5px solid #944a32;
+      color: #944a32;
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 10px 22px;
+      border-radius: 40px;
+      letter-spacing: 1px;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+    }
+
+    .global-fullscreen-btn:hover {
+      background: #944a32;
+      color: black;
+      border-color: #944a32;
+    }
+
+    /* dual timer panels */
+    .timers-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+
+    .timer-card {
+      flex: 1 1 320px;
+      min-width: 300px;
+      background: #0b0b0b;
+      border-radius: 48px;
+      padding: 28px 24px 36px;
+      border: 1px solid #2a2a2a;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(148, 74, 50, 0.2);
+      transition: border 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .timer-card:focus-within {
+      border-color: #944a32;
+    }
+
+    /* fullscreen button per timer (small, subtle) */
+    .timer-fullscreen-btn {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      background: transparent;
+      border: 1px solid #944a32;
+      color: #944a32;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 30px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      backdrop-filter: blur(2px);
+      transition: 0.15s;
+      background: rgba(0,0,0,0.3);
+    }
+
+    .timer-fullscreen-btn:hover {
+      background: #944a32;
+      color: black;
+    }
+
+    .timer-label {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      color: #aaa;
+      margin-bottom: 16px;
+      margin-top: 8px;
+      font-weight: 400;
+      border-bottom: 1px dashed #3a3a3a;
+      padding-bottom: 10px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* huge timer display */
+    .timer-display {
+      font-size: 5.8rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      color: #f0f0f0;
+      text-shadow: 0 0 12px rgba(148, 74, 50, 0.6);
+      letter-spacing: 8px;
+      margin: 10px 0 20px;
+      padding: 8px 18px;
+      background: #050505;
+      border-radius: 60px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid #2c1e18;
+      user-select: none;
+      transition: 0.1s;
+      cursor: pointer;
+    }
+
+    .timer-display:active {
+      color: #944a32;
+    }
+
+    /* input area – only countdown */
+    .time-setter {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #121212;
+      border-radius: 60px;
+      padding: 4px 4px 4px 20px;
+      border: 1px solid #3a2a24;
+    }
+
+    .input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 14px 6px;
+      font-size: 1.3rem;
+      font-variant-numeric: tabular-nums;
+      color: #e0e0e0;
+      outline: none;
+      font-weight: 400;
+      text-align: center;
+      caret-color: #944a32;
+      cursor: text;
+    }
+
+    .input-row input::placeholder {
+      color: #5a4a44;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+
+    .hint-text {
+      font-size: 0.7rem;
+      color: #7a6a64;
+      margin-top: 12px;
+      letter-spacing: 0.5px;
+      text-align: center;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    /* stopwatch card — no input, just display */
+    .stopwatch-card .timer-display {
+      margin-bottom: 10px;
+    }
+
+    .stopwatch-card .hint-text {
+      margin-top: 24px;
+    }
+
+    /* fullscreen styling for per-timer fullscreen */
+    .timer-card:fullscreen {
+      background: black;
+      border-radius: 0;
+      padding: 5vh 5vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      box-shadow: none;
+    }
+
+    .timer-card:fullscreen .timer-display {
+      font-size: 15vw;
+      padding: 20px 30px;
+      max-width: 90vw;
+    }
+
+    .timer-card:fullscreen .timer-fullscreen-btn {
+      display: none; /* hide the button inside fullscreen; exit via Esc */
+    }
+
+    .timer-card:fullscreen .timer-label {
+      font-size: 2.5vw;
+    }
+
+    /* hide other buttons (none exist besides fullscreen ones) */
+    button:not(.global-fullscreen-btn):not(.timer-fullscreen-btn) {
+      display: none;
+    }
+
+    /* subtle accent */
+    .timer-card .timer-display {
+      box-shadow: inset 0 0 20px #000000, 0 4px 10px rgba(0,0,0,0.6);
+    }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      .timer-display {
+        font-size: 4.2rem;
+        letter-spacing: 4px;
+      }
+      .timer-card {
+        padding: 20px 16px 30px;
+      }
+      .timer-fullscreen-btn {
+        top: 10px;
+        right: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="timer-app">
+  <!-- Global fullscreen button -->
+  <button class="global-fullscreen-btn" id="globalFullscreenBtn" aria-label="Toggle fullscreen for entire page">FULLSCREEN PAGE</button>
+
+  <div class="timers-panel">
+    <!-- COUNTDOWN TIMER (with input) -->
+    <div class="timer-card" id="countdownCard">
+      <button class="timer-fullscreen-btn" id="countdownFullscreenBtn" title="Make countdown full screen">⤢ FULL</button>
+      <div class="timer-label">COUNTDOWN</div>
+      <div class="timer-display" id="countdownDisplay" title="Click: start/pause · Double-click: reset">25:00</div>
+      
+      <div class="time-setter">
+        <div class="input-row">
+          <input type="text" id="countdownInput" placeholder="MM:SS or seconds" value="25:00" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="hint-text">↵ ENTER to set · click timer to start/pause</div>
+      </div>
+    </div>
+
+    <!-- STOPWATCH (counts up from zero, no input) -->
+    <div class="timer-card stopwatch-card" id="stopwatchCard">
+      <button class="timer-fullscreen-btn" id="stopwatchFullscreenBtn" title="Make stopwatch full screen">⤢ FULL</button>
+      <div class="timer-label">STOPWATCH</div>
+      <div class="timer-display" id="stopwatchDisplay" title="Click: start/pause · Double-click: reset to zero">00:00</div>
+      <div class="hint-text">click: start/pause · dblclick: reset</div>
+    </div>
+  </div>
+  <!-- No footer text — clean and minimal -->
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    // ----- DOM elements -----
+    const countdownDisplay = document.getElementById('countdownDisplay');
+    const stopwatchDisplay = document.getElementById('stopwatchDisplay');
+    const countdownInput = document.getElementById('countdownInput');
+    const globalFullscreenBtn = document.getElementById('globalFullscreenBtn');
+    const countdownCard = document.getElementById('countdownCard');
+    const stopwatchCard = document.getElementById('stopwatchCard');
+    const countdownFullscreenBtn = document.getElementById('countdownFullscreenBtn');
+    const stopwatchFullscreenBtn = document.getElementById('stopwatchFullscreenBtn');
+
+    // ----- Timer states -----
+    // Countdown
+    let countdownSeconds = 1500;            // 25:00
+    let countdownRunning = false;
+    let countdownInterval = null;
+    let lastSetCountdownValue = 1500;
+    
+    // Stopwatch (always starts from zero, counts up)
+    let stopwatchSeconds = 0;
+    let stopwatchRunning = false;
+    let stopwatchInterval = null;
+
+    // ----- Helper: format MM:SS -----
+    function formatTimeFromSeconds(totalSeconds) {
+      if (totalSeconds < 0) totalSeconds = 0;
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // ----- Update displays -----
+    function updateCountdownDisplay() {
+      countdownDisplay.textContent = formatTimeFromSeconds(countdownSeconds);
+    }
+
+    function updateStopwatchDisplay() {
+      stopwatchDisplay.textContent = formatTimeFromSeconds(stopwatchSeconds);
+    }
+
+    // ----- Countdown tick -----
+    function countdownTick() {
+      if (countdownRunning) {
+        if (countdownSeconds > 0) {
+          countdownSeconds--;
+          updateCountdownDisplay();
+        }
+        if (countdownSeconds <= 0) {
+          pauseCountdown();
+          countdownSeconds = 0;
+          updateCountdownDisplay();
+        }
+      }
+    }
+
+    // ----- Stopwatch tick (count up) -----
+    function stopwatchTick() {
+      if (stopwatchRunning) {
+        stopwatchSeconds++;
+        updateStopwatchDisplay();
+        if (stopwatchSeconds > 359999) stopwatchSeconds = 359999;
+      }
+    }
+
+    // ----- Countdown controls -----
+    function startCountdown() {
+      if (countdownRunning) return;
+      if (countdownSeconds <= 0) return;
+      countdownRunning = true;
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(countdownTick, 1000);
+    }
+
+    function pauseCountdown() {
+      countdownRunning = false;
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    function resetCountdownToLastSet() {
+      pauseCountdown();
+      countdownSeconds = lastSetCountdownValue;
+      updateCountdownDisplay();
+      countdownInput.value = formatTimeFromSeconds(countdownSeconds);
+    }
+
+    // ----- Stopwatch controls -----
+    function startStopwatch() {
+      if (stopwatchRunning) return;
+      stopwatchRunning = true;
+      if (stopwatchInterval) clearInterval(stopwatchInterval);
+      stopwatchInterval = setInterval(stopwatchTick, 1000);
+    }
+
+    function pauseStopwatch() {
+      stopwatchRunning = false;
+      if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+      }
+    }
+
+    function resetStopwatch() {
+      pauseStopwatch();
+      stopwatchSeconds = 0;
+      updateStopwatchDisplay();
+    }
+
+    // ----- Parse input (MM:SS or seconds) -----
+    function parseTimeInput(inputStr) {
+      let trimmed = inputStr.trim();
+      if (trimmed === '') return null;
+      if (trimmed.includes(':')) {
+        const parts = trimmed.split(':');
+        if (parts.length > 2) return null;
+        let minutes = 0, seconds = 0;
+        if (parts.length === 2) {
+          minutes = parseInt(parts[0], 10);
+          seconds = parseInt(parts[1], 10);
+        } else return null;
+        if (isNaN(minutes) || isNaN(seconds)) return null;
+        if (seconds >= 60) {
+          const extraMin = Math.floor(seconds / 60);
+          minutes += extraMin;
+          seconds = seconds % 60;
+        }
+        return minutes * 60 + seconds;
+      } else {
+        const secs = parseInt(trimmed, 10);
+        if (isNaN(secs) || secs < 0) return null;
+        return secs;
+      }
+    }
+
+    // ----- Apply countdown input (Enter) -----
+    function applyCountdownInput() {
+      const raw = countdownInput.value;
+      const parsed = parseTimeInput(raw);
+      if (parsed !== null) {
+        const newSeconds = Math.min(359999, Math.max(0, parsed));
+        lastSetCountdownValue = newSeconds;
+        if (countdownRunning) pauseCountdown();
+        countdownSeconds = newSeconds;
+        updateCountdownDisplay();
+        countdownInput.value = formatTimeFromSeconds(countdownSeconds);
+      } else {
+        countdownInput.value = formatTimeFromSeconds(countdownSeconds);
+      }
+    }
+
+    // ----- Initialize displays -----
+    function initializeDisplays() {
+      countdownSeconds = lastSetCountdownValue;
+      updateCountdownDisplay();
+      countdownInput.value = formatTimeFromSeconds(countdownSeconds);
+      stopwatchSeconds = 0;
+      updateStopwatchDisplay();
+    }
+
+    // ----- Event listeners: Countdown display -----
+    countdownDisplay.addEventListener('click', () => {
+      if (countdownRunning) pauseCountdown();
+      else if (countdownSeconds > 0) startCountdown();
+    });
+
+    countdownDisplay.addEventListener('dblclick', () => {
+      resetCountdownToLastSet();
+    });
+
+    // ----- Event listeners: Stopwatch display -----
+    stopwatchDisplay.addEventListener('click', () => {
+      if (stopwatchRunning) pauseStopwatch();
+      else startStopwatch();
+    });
+
+    stopwatchDisplay.addEventListener('dblclick', () => {
+      resetStopwatch();
+    });
+
+    // ----- Countdown input handling -----
+    countdownInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyCountdownInput();
+      }
+    });
+
+    countdownInput.addEventListener('blur', () => {
+      const raw = countdownInput.value;
+      const parsed = parseTimeInput(raw);
+      if (parsed !== null) {
+        const validSec = Math.min(359999, Math.max(0, parsed));
+        countdownInput.value = formatTimeFromSeconds(validSec);
+      } else {
+        countdownInput.value = formatTimeFromSeconds(countdownSeconds);
+      }
+    });
+
+    // ----- Global fullscreen -----
+    function toggleGlobalFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.warn('Fullscreen error'));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+    globalFullscreenBtn.addEventListener('click', toggleGlobalFullscreen);
+
+    // ----- Per-timer fullscreen -----
+    function requestFullscreenForElement(element) {
+      if (element.requestFullscreen) {
+        element.requestFullscreen().catch(err => console.warn('Fullscreen request failed'));
+      }
+    }
+
+    countdownFullscreenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      requestFullscreenForElement(countdownCard);
+    });
+
+    stopwatchFullscreenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      requestFullscreenForElement(stopwatchCard);
+    });
+
+    // Optional: handle fullscreen change to adjust styles (already handled by CSS :fullscreen)
+
+    // ----- Prevent context menu on timers -----
+    countdownDisplay.addEventListener('contextmenu', (e) => e.preventDefault());
+    stopwatchDisplay.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // ----- Clean intervals -----
+    window.addEventListener('beforeunload', () => {
+      if (countdownInterval) clearInterval(countdownInterval);
+      if (stopwatchInterval) clearInterval(stopwatchInterval);
+    });
+
+    // ----- Start -----
+    initializeDisplays();
+  })();
+</script>
+</body>
+</html>

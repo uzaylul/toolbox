@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Date</title>
+<style>
+    body{
+        font-family: Arial, sans-serif;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+        margin:0;
+        background:#000000;
+    }
+    button{
+        padding: 12px 24px;
+        font-size:1.2rem;
+        cursor:pointer;
+        border:none;
+        border-radius:6px;
+        background:#944A32;
+        color:white;
+        transition:.3s;
+    }
+    button:hover{background:#944A32;}
+</style>
+</head>
+<body>
+
+<button id="copyBtn">Copy Date and Time</button>
+
+<script>
+document.getElementById('copyBtn').addEventListener('click', async () => {
+    // Current date and time
+    const now = new Date();
+
+    // Format: DD.MM.YYYY HH:mm
+    const day   = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // 0‑indexed month
+    const year  = now.getFullYear();
+    const hour  = String(now.getHours()).padStart(2, '0');
+    const minute= String(now.getMinutes()).padStart(2, '0');
+
+    const formatted = `${day}.${month}.${year} ${hour}:${minute}`;
+
+    try {
+        // Copy to clipboard (modern browsers)
+        await navigator.clipboard.writeText(formatted);
+        alert(`Copied: "${formatted}"`);
+    } catch (err) {
+        // Fallback: document.execCommand
+        const textarea = document.createElement('textarea');
+        textarea.value = formatted;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try{
+            document.execCommand('copy');
+            alert(`Copied (fallback): "${formatted}"`);
+        }catch(e){
+            console.error('Kopyalama başarısız', e);
+            alert('Could not be copied to clipboard.');
+        }
+        document.body.removeChild(textarea);
+    }
+});
+</script>
+
+</body>
+</html>

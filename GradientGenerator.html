@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Gradient Generator</title>
+<style>
+  body{
+    background:#000;
+    color:#ddd;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin:0;padding:2rem;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;
+  }
+  h1{margin-bottom:1rem;text-align:center;}
+  .controls{
+    width:100%;max-width:700px;margin-bottom:1.5rem;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:1rem;
+  }
+  label{
+    font-size:.9rem;color:#ccc;display:flex;flex-direction:column;
+  }
+  input[type=color],select,input[type=number]{
+    margin-top:.4rem;padding:.4rem .6rem;border-radius:5px;border:none;
+    background:#111;color:#ddd;font-size:1rem;
+  }
+  #preview{width:512px;height:200px;border-radius:12px;border:1px solid #444;background:linear-gradient(90deg,#ff0000,#0000ff);margin-bottom:1rem;}
+  #cssCode{
+    width:512px;background:#111;border-radius:8px;padding:1rem;
+    font-family:monospace;color:#4caf50;word-wrap:break-word;
+  }
+  button{background:#944a32;color:white;border:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;margin-top:1rem;}
+  button:hover{background:#7d3c2b;}
+  .button-group{display:flex;gap:10px;flex-wrap:wrap;}
+</style>
+</head>
+
+<body>
+<h1>Gradient Generator</h1>
+
+<div class="controls">
+  <label>Color 1
+    <input type="color" id="color1" value="#ff0000"/>
+  </label>
+  <label>Color 2
+    <input type="color" id="color2" value="#0000ff"/>
+  </label>
+  <label>Gradient Type
+    <select id="gradientType">
+      <option value="linear">Linear</option>
+      <option value="radial">Radial</option>
+    </select>
+  </label>
+  <label>Angle (degrees, linear only)
+    <input type="number" id="angle" value="90" min="0" max="360"/>
+  </label>
+  <label>PNG Width (px)
+    <input type="number" id="pngWidth" value="512" min="100" max="2000"/>
+  </label>
+  <label>PNG Height (px)
+    <input type="number" id="pngHeight" value="200" min="100" max="2000"/>
+  </label>
+</div>
+
+<div id="preview"></div>
+<pre id="cssCode"></pre>
+
+<div class="button-group">
+  <button id="copyBtn">Copy CSS Code</button>
+  <button id="downloadPngBtn">Download PNG</button>
+</div>
+
+<script>
+const color1=document.getElementById('color1');
+const color2=document.getElementById('color2');
+const gradientType=document.getElementById('gradientType');
+const angle=document.getElementById('angle');
+const preview=document.getElementById('preview');
+const cssCode=document.getElementById('cssCode');
+const copyBtn=document.getElementById('copyBtn');
+const downloadPngBtn=document.getElementById('downloadPngBtn');
+const pngWidthInput=document.getElementById('pngWidth');
+const pngHeightInput=document.getElementById('pngHeight');
+
+function updateGradient(){
+  const c1=color1.value,c2=color2.value,type=gradientType.value,deg=angle.value;
+  let css='';
+  if(type==='linear'){
+    css=`linear-gradient(${deg}deg, ${c1}, ${c2})`;
+    angle.disabled=false;
+  }else{
+    css=`radial-gradient(circle, ${c1}, ${c2})`;
+    angle.disabled=true;
+  }
+  preview.style.background=css;
+  cssCode.textContent=`background: ${css};`;
+}
+
+function downloadPNG(){
+  let w=parseInt(pngWidthInput.value)||512,h=parseInt(pngHeightInput.value)||200;
+  const c1=color1.value,c2=color2.value,type=gradientType.value,deg=angle.value;
+  const canvas=document.createElement('canvas');
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');
+
+  if(type==='linear'){
+    const a=(deg%360)*Math.PI/180,x0=w/2-Math.cos(a)*w/2,y0=h/2-Math.sin(a)*h/2,
+          x1=w/2+Math.cos(a)*w/2,y1=h/2+Math.sin(a)*h/2;
+    const g=ctx.createLinearGradient(x0,y0,x1,y1);
+    g.addColorStop(0,c1);g.addColorStop(1,c2);
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  }else{
+    const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)/2);
+    g.addColorStop(0,c1);g.addColorStop(1,c2);
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  }
+  canvas.toBlob(b=>{
+    const u=URL.createObjectURL(b),a=document.createElement('a');
+    a.href=u;a.download='gradient.png';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(u);
+  });
+}
+
+[color1,color2,gradientType,angle].forEach(e=>e.addEventListener('input',updateGradient));
+
+copyBtn.onclick=()=>{navigator.clipboard.writeText(cssCode.textContent).then(()=>{copyBtn.textContent='Copied!';setTimeout(()=>copyBtn.textContent='Copy CSS Code',1500);});};
+
+downloadPngBtn.onclick=downloadPNG;
+
+updateGradient();
+</script>
+</body>
+</html>
